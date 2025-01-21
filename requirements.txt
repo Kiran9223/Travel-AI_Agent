@@ -1,0 +1,5 @@
+google-generativeai
+huggingface_hub
+supabase
+langchain-google-genai
+langchain
