@@ -8,6 +8,11 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 model = genai.GenerativeModel("gemini-1.5-flash")
 
+availableFunctions = {
+    "getCurrentWeather" : getCurrentWeather, 
+    "getLocation" : getLocation
+}
+
 ## Build an agent that can answer any questions that might require knowledge
 ## about my current location and current weather at my location.
 
@@ -17,8 +22,8 @@ location = getLocation()
 # print(weather, location)
 
 def agent(query):
-    chat = model.start_chat(
-        history=[
+    MAX_ITERATIONS = 5
+    messages = [
             {
                 'role': 'model',
                 'parts': prompt,
@@ -27,29 +32,45 @@ def agent(query):
                 'role': 'user',
                 'parts': query,
             }
-        ]
-    )
-    response = chat.send_message(query)
-    #  /**
-    #  * PLAN:
-    #  * 1. Split the string on the newline character \n
-    #  * 2. Search through the array of strings for one that has "Action:"
-    #  * 3. Parse the action (function and parameter) from the string
-    #  * 4. Calling the function
-    #  * 5. Add an "Obversation" message with the results of the function call
-    #  */
-    split_response = response.text.split("\n")
-    actionStr=""
-    match=""
-    for s in split_response:
-        match = re.search(r"Action:\s*(.*?):", s)
+    ]
+    chat_input = "Check the message history and do the needful"
+    for i in range(MAX_ITERATIONS):
+        print("Iteration : ", i)
+        chat = model.start_chat(
+            history=messages
+        )
+        response = chat.send_message(chat_input)
+        print(response.text)
+        messages.append({'role': 'model', 'parts': response.text})
+        split_response = response.text.split("\n")
+        # print("split_response : ", split_response)
+        actionStr=""
+        match=""
+        for s in split_response:
+            match = re.search(r"Action:\s*(.*?):", s)
+            if match:
+                actionStr = s
+                break
+        # print("actionStr : ",actionStr)
+        # print("match : ",match.group(1))
+        action = ""
         if match:
-            actionStr = s
+            action = match.group(1)
+            if action not in availableFunctions:
+                print("Action not available : ", action)
+                return
+            print("Calling function : ", action)
+            function = availableFunctions[action]
+            observation = function()
+            print(observation)
+            messages.append({'role': 'model', 'parts': f"Observation : {str(observation)}"})
+            # print(messages)
+        else:
+            print("Agent finished with task")
+            print(response.text) 
             break
-    print(actionStr)
-    print(match.group(1))
-    
+
     
 
-agent("Please give me some ideas for activities to do this afternoon.")
+agent("What is the current weather in my location?")
 
