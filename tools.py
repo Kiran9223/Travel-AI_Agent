@@ -1,5 +1,7 @@
 def getCurrentWeather():
-    return {"temperature": "72", "unit": "F", "forecast": "sunny"}
+    return {"temperature": "-2", "unit": "F", "forecast": "snowy"}
 
 def getLocation():
     return "Los Angeles"
+
+tools = [getCurrentWeather, getLocation]
